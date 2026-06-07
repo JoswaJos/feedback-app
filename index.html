@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback App</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #ffffff;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #7c3aed;
+    }
+
+    p.subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 40px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 16px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:hover { background: #6d28d9; }
+
+    .message {
+      text-align: center;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .success { background: #064e3b; color: #6ee7b7; }
+    .error { background: #7f1d1d; color: #fca5a5; }
+
+    .feedbacks {
+      margin-top: 50px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      color: #7c3aed;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card .name { font-weight: bold; color: #a78bfa; }
+    .card .msg { margin-top: 6px; color: #ccc; }
+    .card .time { margin-top: 6px; font-size: 0.75rem; color: #555; }
+
+    .empty { text-align: center; color: #555; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Feedback App</h1>
+    <p class="subtitle">Share your thoughts with us</p>
+
+    <input type="text" id="name" placeholder="Your name" />
+    <textarea id="message" rows="4" placeholder="Your feedback..."></textarea>
+    <button onclick="submitFeedback()">Submit Feedback</button>
+
+    <div class="message" id="msg"></div>
+
+    <div class="feedbacks">
+      <h2>All Feedback</h2>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script>
+    // 🔴 REPLACE THIS WITH YOUR RENDER URL
+    const API = 'https://feedback-app-dbeh.onrender.com';
+
+    async function submitFeedback() {
+      const name = document.getElementById('name').value;
+      const message = document.getElementById('message').value;
+      const msgBox = document.getElementById('msg');
+
+      try {
+        const res = await fetch(`${API}/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, message })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage('Feedback submitted successfully!', 'success');
+          document.getElementById('name').value = '';
+          document.getElementById('message').value = '';
+          loadFeedbacks();
+        } else {
+          showMessage(data.error, 'error');
+        }
+      } catch (err) {
+        showMessage('Something went wrong. Try again.', 'error');
+      }
+    }
+
+    async function loadFeedbacks() {
+      const res = await fetch(`${API}/feedback`);
+      const data = await res.json();
+      const list = document.getElementById('list');
+
+      if (data.data.length === 0) {
+        list.innerHTML = '<p class="empty">No feedback yet. Be the first!</p>';
+        return;
+      }
+
+      list.innerHTML = data.data.reverse().map(f => `
+        <div class="card">
+          <div class="name">${f.name}</div>
+          <div class="msg">${f.message}</div>
+          <div class="time">${new Date(f.createdAt).toLocaleString()}</div>
+        </div>
+      `).join('');
+    }
+
+    function showMessage(text, type) {
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = `message ${type}`;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 3000);
+    }
+
+    loadFeedbacks();
+  </script>
+</body>
+</html>
